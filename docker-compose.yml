@@ -1,0 +1,43 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: rrs-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: rrs_admin
+      MONGO_INITDB_ROOT_PASSWORD: rrs_secret
+      MONGO_INITDB_DATABASE: restaurant_reservation
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rrs-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      MONGODB_URL: mongodb://rrs_admin:rrs_secret@mongo:27017/restaurant_reservation?authSource=admin
+      JWT_SECRET: super-secret-jwt-key-change-in-production
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRATION_MINUTES: 1440
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rrs-frontend
+    restart: always
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
