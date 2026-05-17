@@ -1,0 +1,30 @@
+<h1 class="text-3xl font-bold mb-6">Éttermek</h1>
+<div *ngIf="loading" class="text-gray-500">Betöltés...</div>
+<div *ngIf="!loading && restaurants.length === 0" class="text-gray-500">Nincs elérhető étterem.</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div *ngFor="let r of restaurants"
+    class="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-5 flex flex-col justify-between">
+    <div>
+      <h2 class="text-xl font-semibold mb-2">{{ r.name }}</h2>
+      <p class="text-gray-600 text-sm mb-2">{{ r.address }}</p>
+      <p class="text-gray-500 text-sm mb-3 line-clamp-2">{{ r.description }}</p>
+      <div class="flex flex-wrap gap-1 mb-3">
+        <span *ngFor="let s of r.services"
+          class="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full">
+          {{ serviceLabel(s) }}
+        </span>
+      </div>
+      <p class="text-xs text-gray-400">{{ r.opening_hours }}</p>
+    </div>
+    <div class="mt-4 flex gap-2">
+      <a [routerLink]="['/restaurants', r.id]"
+        class="text-sm bg-indigo-600 text-white px-4 py-1.5 rounded hover:bg-indigo-700">
+        Részletek
+      </a>
+      <a *ngIf="auth.isLoggedIn && !auth.isAdmin" [routerLink]="['/book', r.id]"
+        class="text-sm bg-green-600 text-white px-4 py-1.5 rounded hover:bg-green-700">
+        Foglalás
+      </a>
+    </div>
+  </div>
+</div>

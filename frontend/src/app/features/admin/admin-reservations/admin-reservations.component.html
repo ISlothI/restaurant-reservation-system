@@ -1,0 +1,174 @@
+<h1 class="text-2xl font-bold mb-6">Foglalások kezelése</h1>
+<div *ngIf="loading" class="text-gray-500">Betöltés...</div>
+<div *ngIf="!loading && !restaurant" class="text-gray-500">Először hozd létre az éttermedet a Vezérlőpulton.</div>
+
+<div *ngIf="!loading && restaurant">
+
+  <!-- Toolbar: filter + create -->
+  <div class="flex flex-wrap items-end gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Dátum</label>
+      <input type="date" [(ngModel)]="filterDate"
+        class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500" />
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Napszak</label>
+      <select [(ngModel)]="filterPeriod"
+        class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500">
+        <option value="">Egész nap</option>
+        <option value="morning">Délelőtt (6–12)</option>
+        <option value="afternoon">Délután (12–18)</option>
+        <option value="evening">Este (18–24)</option>
+      </select>
+    </div>
+    <button (click)="applyFilter()" class="bg-indigo-600 text-white text-sm px-4 py-1.5 rounded hover:bg-indigo-700">Szűrés</button>
+    <button *ngIf="filterDate" (click)="clearFilter()" class="bg-gray-200 text-gray-700 text-sm px-4 py-1.5 rounded hover:bg-gray-300">Törlés</button>
+    <div class="ml-auto">
+      <button (click)="openCreate()" class="bg-green-600 text-white text-sm px-4 py-2 rounded hover:bg-green-700">+ Új foglalás</button>
+    </div>
+  </div>
+
+  <!-- Create form -->
+  <div *ngIf="showCreate" class="bg-white shadow rounded-lg p-5 mb-6">
+    <h3 class="font-semibold mb-3">Új foglalás létrehozása</h3>
+    <div *ngIf="createError" class="bg-red-100 text-red-700 p-2 rounded text-sm mb-3">{{ createError }}</div>
+    <form (ngSubmit)="saveCreate()" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Időpont</label>
+        <select [(ngModel)]="createForm.selectedTimeKey" name="c_timeKey" required (ngModelChange)="onCreateTimeChange()"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+          <option value="" disabled>Válassz időpontot...</option>
+          <option *ngFor="let g of createTimeGroups" [value]="g.key">{{ g.label }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Asztal</label>
+        <select [(ngModel)]="createForm.slot_id" name="c_slotId" required
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+          <option value="" disabled>Válassz asztalt...</option>
+          <option *ngFor="let s of createAvailableSlots" [value]="s.id">{{ getTableLabel(s.table_id) }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Létszám</label>
+        <input type="number" [(ngModel)]="createForm.party_size" name="c_partySize" min="1" max="50" required
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Alkalom</label>
+        <select [(ngModel)]="createForm.special_occasion" name="c_occasion"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+          <option *ngFor="let o of occasions" [ngValue]="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Megjegyzés</label>
+        <input type="text" [(ngModel)]="createForm.guest_note" name="c_note"
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="Pl. allergia, babaszék" />
+      </div>
+      <div class="flex items-end gap-3 sm:col-span-2">
+        <button type="submit" [disabled]="!createForm.slot_id" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50">Létrehozás</button>
+        <button type="button" (click)="showCreate = false" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Mégse</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="reservations.length === 0 && !showCreate" class="text-gray-400">Nincs foglalás a szűrt időszakban.</div>
+
+  <!-- Reservation list -->
+  <div class="space-y-4">
+    <div *ngFor="let r of reservations" class="bg-white shadow rounded-lg p-5">
+
+      <!-- Edit form -->
+      <div *ngIf="editingId === r.id">
+        <h3 class="font-semibold mb-3">Foglalás szerkesztése</h3>
+        <div *ngIf="editError" class="bg-red-100 text-red-700 p-2 rounded text-sm mb-3">{{ editError }}</div>
+        <form (ngSubmit)="saveEdit()" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Státusz</label>
+            <select [(ngModel)]="editForm.status" name="e_status"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+              <option value="pending">Függőben</option>
+              <option value="confirmed">Visszaigazolva</option>
+              <option value="cancelled">Lemondva</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Időpont</label>
+            <select [(ngModel)]="editForm.selectedTimeKey" name="e_timeKey" (ngModelChange)="onEditTimeChange()"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+              <option value="" disabled>Válassz...</option>
+              <option *ngFor="let g of editTimeGroups" [value]="g.key">{{ g.label }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Asztal</label>
+            <select [(ngModel)]="editForm.slot_id" name="e_slotId"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+              <option value="" disabled>Válassz...</option>
+              <option *ngFor="let s of editAvailableSlots" [value]="s.id">{{ getTableLabel(s.table_id) }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Létszám</label>
+            <input type="number" [(ngModel)]="editForm.party_size" name="e_partySize" min="1" max="50"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Alkalom</label>
+            <select [(ngModel)]="editForm.special_occasion" name="e_occasion"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+              <option *ngFor="let o of occasions" [ngValue]="o.value">{{ o.label }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Megjegyzés</label>
+            <input type="text" [(ngModel)]="editForm.guest_note" name="e_note"
+              class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div class="flex items-end gap-3 sm:col-span-2">
+            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Mentés</button>
+            <button type="button" (click)="cancelEdit()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">Mégse</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Display row -->
+      <div *ngIf="editingId !== r.id" class="flex items-start justify-between">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs px-2 py-0.5 rounded-full font-medium" [ngClass]="statusClass(r.status)">
+              {{ statusLabel(r.status) }}
+            </span>
+            <span class="text-xs text-gray-500">{{ r.created_at | date:'yyyy.MM.dd. HH:mm' }}</span>
+          </div>
+          <p *ngIf="r.user_name" class="text-sm font-semibold text-gray-800">{{ r.user_name }}</p>
+          <p *ngIf="r.table_name" class="text-sm text-gray-600">
+            Asztal: {{ r.table_name }}
+            <span *ngIf="r.table_type" class="text-gray-400">({{ tableTypeLabel(r.table_type) }})</span>
+          </p>
+          <p *ngIf="r.slot_start" class="text-sm text-gray-500">
+            {{ r.slot_start | date:'yyyy.MM.dd. HH:mm' }} – {{ r.slot_end | date:'HH:mm' }}
+          </p>
+          <p class="text-sm"><span class="font-medium">Létszám:</span> {{ r.party_size }} fő</p>
+          <p class="text-sm"><span class="font-medium">Alkalom:</span> {{ occasionLabel(r.special_occasion) }}</p>
+          <p *ngIf="r.guest_note" class="text-xs text-gray-400 mt-1">{{ r.guest_note }}</p>
+        </div>
+        <div class="flex gap-2">
+          <button (click)="openEdit(r)"
+            class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded hover:bg-indigo-200">
+            Szerkesztés
+          </button>
+          <button *ngIf="r.status === 'pending'" (click)="confirm(r.id)"
+            class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+            Visszaigazolás
+          </button>
+          <button *ngIf="r.status !== 'cancelled'" (click)="cancel(r.id)"
+            class="text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+            Lemondás
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

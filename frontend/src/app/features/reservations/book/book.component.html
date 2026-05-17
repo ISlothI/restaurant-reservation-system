@@ -1,0 +1,57 @@
+<div class="max-w-lg mx-auto mt-6">
+  <h1 class="text-2xl font-bold mb-2">Foglalás</h1>
+  <p *ngIf="restaurant" class="text-gray-600 mb-6">{{ restaurant.name }}</p>
+
+  <form (ngSubmit)="onSubmit()" class="bg-white shadow rounded-lg p-6 space-y-4">
+    <div *ngIf="error" class="bg-red-100 text-red-700 p-3 rounded text-sm">{{ error }}</div>
+    <div *ngIf="success" class="bg-green-100 text-green-700 p-3 rounded text-sm">{{ success }}</div>
+
+    <!-- Step 1: Select time -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">1. Időpont</label>
+      <select [(ngModel)]="selectedTimeKey" name="timeKey" required (ngModelChange)="onTimeChange()"
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="" disabled>Válassz időpontot...</option>
+        <option *ngFor="let g of timeGroups" [value]="g.key">{{ g.label }}</option>
+      </select>
+    </div>
+
+    <!-- Step 2: Select table (shown only after time is selected) -->
+    <div *ngIf="selectedTimeKey">
+      <label class="block text-sm font-medium text-gray-700 mb-1">2. Asztal</label>
+      <select [(ngModel)]="selectedSlotId" name="slotId" required
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="" disabled>Válassz asztalt...</option>
+        <option *ngFor="let s of availableSlots" [value]="s.id">
+          {{ getTableLabel(s.table_id) }}
+        </option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Létszám</label>
+      <input type="number" [(ngModel)]="partySize" name="partySize" min="1" max="50" required
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Különleges alkalom</label>
+      <select [(ngModel)]="specialOccasion" name="specialOccasion"
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option *ngFor="let o of occasions" [ngValue]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Megjegyzés</label>
+      <textarea [(ngModel)]="guestNote" name="guestNote" rows="3"
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        placeholder="Pl. allergia, babaszék, stb."></textarea>
+    </div>
+
+    <button type="submit" [disabled]="loading || !selectedSlotId"
+      class="w-full bg-green-600 text-white py-2 rounded font-semibold hover:bg-green-700 disabled:opacity-50">
+      {{ loading ? 'Foglalás...' : 'Foglalás leadása' }}
+    </button>
+  </form>
+</div>

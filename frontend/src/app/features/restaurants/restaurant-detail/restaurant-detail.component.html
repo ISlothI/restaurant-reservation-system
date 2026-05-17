@@ -1,0 +1,46 @@
+<div *ngIf="loading" class="text-gray-500">Betöltés...</div>
+<div *ngIf="!loading && !restaurant" class="text-red-500">Az étterem nem található.</div>
+
+<div *ngIf="restaurant">
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-3xl font-bold">{{ restaurant.name }}</h1>
+    <a *ngIf="auth.isLoggedIn && !auth.isAdmin" [routerLink]="['/book', restaurant.id]"
+      class="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 font-semibold">
+      Foglalás
+    </a>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-6 mb-6">
+    <p class="text-gray-700 mb-3">{{ restaurant.description }}</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+      <div><span class="font-medium">Cím:</span> {{ restaurant.address }}</div>
+      <div><span class="font-medium">Kapcsolat:</span> {{ restaurant.contact }}</div>
+      <div><span class="font-medium">Nyitvatartás:</span> {{ restaurant.opening_hours }}</div>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-4">
+      <span *ngFor="let s of restaurant.services"
+        class="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full">
+        {{ serviceLabel(s) }}
+      </span>
+    </div>
+  </div>
+
+  <h2 class="text-xl font-semibold mb-3">Asztalok</h2>
+  <div *ngIf="tables.length === 0" class="text-gray-400 mb-6 text-sm">Nincsenek asztalok.</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div *ngFor="let t of tables" class="bg-white shadow rounded p-4">
+      <p class="font-semibold">{{ t.name }}</p>
+      <p class="text-sm text-gray-600">{{ tableTypeLabel(t.table_type) }} · {{ t.capacity }} fő</p>
+    </div>
+  </div>
+
+  <h2 class="text-xl font-semibold mb-3">Elérhető időpontok</h2>
+  <div *ngIf="slots.length === 0" class="text-gray-400 text-sm">Jelenleg nincs elérhető időpont.</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div *ngFor="let s of slots" class="bg-white shadow rounded p-4">
+      <p class="font-semibold text-sm">{{ getTableName(s.table_id) }}</p>
+      <p class="text-sm text-gray-600">{{ s.start_at | date:'yyyy.MM.dd. HH:mm' }} – {{ s.end_at | date:'HH:mm' }}</p>
+      <p class="text-xs" [ngClass]="s.status === 'open' ? 'text-green-600' : 'text-red-400'">{{ s.status === 'open' ? 'Szabad' : 'Foglalt' }}</p>
+    </div>
+  </div>
+</div>

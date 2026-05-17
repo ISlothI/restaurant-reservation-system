@@ -1,0 +1,31 @@
+<h1 class="text-2xl font-bold mb-6">Foglalásaim</h1>
+<div *ngIf="loading" class="text-gray-500">Betöltés...</div>
+<div *ngIf="!loading && reservations.length === 0" class="text-gray-500">Még nincs foglalásod.</div>
+
+<div class="space-y-4">
+  <div *ngFor="let r of reservations" class="bg-white shadow rounded-lg p-5 flex items-center justify-between">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs px-2 py-0.5 rounded-full font-medium" [ngClass]="statusClass(r.status)">
+          {{ statusLabel(r.status) }}
+        </span>
+        <span *ngIf="r.special_occasion" class="text-xs text-indigo-600">{{ occasionLabel(r.special_occasion) }}</span>
+      </div>
+      <p *ngIf="r.restaurant_name" class="text-sm font-semibold text-gray-800">{{ r.restaurant_name }}</p>
+      <p *ngIf="r.table_name" class="text-sm text-gray-600">
+        Asztal: {{ r.table_name }}
+        <span *ngIf="r.table_type" class="text-gray-400">({{ tableTypeLabel(r.table_type) }})</span>
+      </p>
+      <p *ngIf="r.slot_start" class="text-sm text-gray-500">
+        {{ r.slot_start | date:'yyyy.MM.dd. HH:mm' }} – {{ r.slot_end | date:'HH:mm' }}
+      </p>
+      <p class="text-sm text-gray-700"><span class="font-medium">Létszám:</span> {{ r.party_size }} fő</p>
+      <p class="text-xs text-gray-400">Létrehozva: {{ r.created_at | date:'yyyy.MM.dd. HH:mm' }}</p>
+      <p *ngIf="r.guest_note" class="text-xs text-gray-400 mt-1">{{ r.guest_note }}</p>
+    </div>
+    <button *ngIf="r.status !== 'cancelled'" (click)="cancel(r.id)"
+      class="text-sm bg-red-500 text-white px-4 py-1.5 rounded hover:bg-red-600">
+      Lemondás
+    </button>
+  </div>
+</div>

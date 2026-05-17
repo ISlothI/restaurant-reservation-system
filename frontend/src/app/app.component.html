@@ -1,0 +1,41 @@
+<nav class="bg-indigo-700 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <a routerLink="/" class="text-xl font-bold tracking-tight hover:text-indigo-200">
+      Asztalfoglalo
+    </a>
+    <div class="flex items-center gap-4 text-sm">
+      <a routerLink="/" class="hover:text-indigo-200">Ettermek</a>
+
+      <ng-container *ngIf="auth.isLoggedIn && !auth.isAdmin">
+        <a routerLink="/my-reservations" class="hover:text-indigo-200">Foglalasaim</a>
+      </ng-container>
+
+      <ng-container *ngIf="auth.isAdmin">
+        <a routerLink="/admin" class="hover:text-indigo-200">Vezerlopult</a>
+        <a routerLink="/admin/tables" class="hover:text-indigo-200">Asztalok</a>
+        <a routerLink="/admin/slots" class="hover:text-indigo-200">Idopontok</a>
+        <a routerLink="/admin/reservations" class="hover:text-indigo-200">Foglalasok</a>
+      </ng-container>
+
+      <ng-container *ngIf="!auth.isLoggedIn">
+        <a routerLink="/login" class="bg-white text-indigo-700 px-3 py-1 rounded font-semibold hover:bg-indigo-100">
+          Bejelentkezes
+        </a>
+        <a routerLink="/register" class="border border-white px-3 py-1 rounded hover:bg-indigo-600">
+          Regisztracio
+        </a>
+      </ng-container>
+
+      <ng-container *ngIf="auth.isLoggedIn">
+        <a routerLink="/profile" class="text-indigo-200 hover:text-white">{{ auth.currentUser?.full_name }}</a>
+        <button (click)="logout()" class="border border-white px-3 py-1 rounded hover:bg-indigo-600">
+          Kijelentkezes
+        </button>
+      </ng-container>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+  <router-outlet />
+</main>
